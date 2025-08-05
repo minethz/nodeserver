@@ -1,0 +1,37 @@
+{
+  "name": "platform-api",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.806.0",
+    "@aws-sdk/lib-storage": "^3.806.0",
+    "aws-sdk": "^2.1692.0",
+    "axios": "^1.9.0",
+    "bcrypt": "^5.1.1",
+    "body-parser": "^2.2.0",
+    "braintree": "^3.31.0",
+    "braintree-web-drop-in": "^1.44.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.2",
+    "node": "^23.7.0",
+    "openai": "^4.103.0",
+    "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1"
+  },
+  "description": "",
+  "devDependencies": {
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.11"
+  }
+}
