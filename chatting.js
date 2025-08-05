@@ -16,7 +16,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 app.use(express.json());
 
 // Update CORS configuration
-const allowedOrigins = ["http://localhost:3000", "http://localhost:5173"];
+const allowedOrigins = ["https://nodeserver-production-982a.up.railway.app"];
 app.use(cors({
   origin: (origin, callback) => {
     if (!origin || allowedOrigins.includes(origin)) {

@@ -275,7 +275,7 @@ router.post("/api/forgot-password", async (req, res) => {
     );
 
     // Construct reset link (adjust frontend URL)
-    const resetLink = `http://localhost:5173/reset-password?token=${resetToken}&email=${email}`;
+    const resetLink = `https://nodeserver-production-982a.up.railway.app/reset-password?token=${resetToken}&email=${email}`;
 
     // Send email
     await sendResetPasswordEmail(email, user.first_name, resetLink);
@@ -384,8 +384,8 @@ router.post("/api/middleman-service", async (req, res) => {
     );
 
     // Generate links for buyer and seller
-    const buyerLink = `http://localhost:5173/waiting?requestId=${requestId}&role=buyer`;
-    const sellerLink = `http://localhost:5173/waiting?requestId=${requestId}&role=seller`;
+    const buyerLink = `https://nodeserver-production-982a.up.railway.app/waiting?requestId=${requestId}&role=buyer`;
+    const sellerLink = `https://nodeserver-production-982a.up.railway.app/waiting?requestId=${requestId}&role=seller`;
 
     // Send emails to both buyer and seller with their respective confirmation codes
     const buyerEmail = role === "buyer" ? email : counterpartyEmail;
@@ -418,7 +418,7 @@ router.post("/api/send-confirmation-code", async (req, res) => {
     );
 
     // Send the confirmation code via email
-    const actionLink = `http://localhost:5173/waiting?requestId=${requestId}`;
+    const actionLink = `https://nodeserver-production-982a.up.railway.app/waiting?requestId=${requestId}`;
     await sendMiddlemanEmail(email, role, "Confirmation Code", "", "", actionLink, confirmationCode);
 
     return res.status(200).json({ message: "Confirmation code sent successfully." });
