@@ -11,10 +11,16 @@ const paymentsRoutes = require("./payments"); // Import payments.js
 const profileRoutes = require("./profile"); // Import profile routes
 const signupRoutes = require("./signup"); // Import all signup API routes
 const { exec } = require("child_process");
+const http = require("http");
+const { Server } = require("socket.io");
+const { sendMiddlemanEmail } = require("./sendEmail"); // Import email utility
 
 const app = express();
 const port = process.env.PORT || 5001;
 
+// Create HTTP server
+const server = http.createServer(app); // Create HTTP server
+const io = new Server(server); // Attach socket.io to the server
 
 // Middleware
 app.use(cors());
@@ -432,37 +438,168 @@ app.use("/payments", paymentsRoutes); // Mount payments routes
 app.use(profileRoutes); // Add profile routes
 app.use(signupRoutes); // Mount signup API routes
 
-// Start the chat server
-exec("node chatting.js", (error, stdout, stderr) => {
-  if (error) {
-    console.error(`Error starting chat server: ${error.message}`);
-    return;
-  }
-  if (stderr) {
-    console.error(`Chat server stderr: ${stderr}`);
-    return;
-  }
-  console.log(`Chat server stdout: ${stdout}`);
+// WebSocket connection
+io.on("connection", (socket) => {
+  console.log("A user connected");
+
+  socket.on("joinRoom", (roomId) => {
+    socket.join(roomId);
+    console.log(`User joined room: ${roomId}`);
+  });
+
+  socket.on("disconnect", () => {
+    console.log("A user disconnected");
+  });
 });
 
-// Start the signup server
-exec('node signup.js', (error, stdout, stderr) => {
-  if (error) {
-    console.error(`Error starting signup server: ${error.message}`);
-    return;
+// Save a new message and broadcast it
+app.post("/api/sendMessage", async (req, res) => {
+  const { requestId, email, message } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ message: "Email is required." });
   }
-  if (stderr) {
-    console.error(`Signup server stderr: ${stderr}`);
-    return;
+
+  try {
+    const userResult = await pool.query(
+      `SELECT email FROM users WHERE email = $1`,
+      [email]
+    );
+
+    if (userResult.rowCount === 0 && email !== "middleman@service.com") {
+      return res.status(403).json({ message: "Unauthorized user." });
+    }
+
+    let role = "middleman";
+
+    if (email !== "middleman@service.com") {
+      const roleResult = await pool.query(
+        `SELECT role FROM confirmation_codes WHERE request_id = $1 AND email = $2`,
+        [requestId, email]
+      );
+      role = roleResult.rowCount > 0 ? roleResult.rows[0].role : "unknown";
+    }
+
+    const result = await pool.query(
+      `INSERT INTO chat_messages (request_id, email, message, timestamp)
+       VALUES ($1, $2, $3, NOW()) RETURNING email, message, timestamp`,
+      [requestId, email, message]
+    );
+
+    const row = result.rows[0];
+    const newMessage = {
+      email: row.email,
+      text: row.message,
+      timestamp: row.timestamp,
+      role,
+    };
+
+    io.to(requestId).emit("newMessage", newMessage);
+
+    res.status(201).json({ message: "Message sent successfully." });
+  } catch (error) {
+    console.error("Error saving message:", error);
+    res.status(500).json({ message: "Internal Server Error", error: error.message });
   }
-  console.log(`Signup server stdout: ${stdout}`);
 });
 
-app.get("/", (req, res) => {
-  res.send("Server is working!");
+// Retrieve messages for a specific request
+app.get("/api/getMessages/:requestId", async (req, res) => {
+  const { requestId } = req.params;
+  const { email } = req.query;
+
+  try {
+    const result = await pool.query(
+      `SELECT cm.email, 
+              COALESCE(cm.message, NULL) AS text, 
+              cm.file_url AS "fileUrl", 
+              cm.timestamp, 
+              cc.role
+       FROM chat_messages cm
+       LEFT JOIN confirmation_codes cc
+       ON CAST(cm.request_id AS VARCHAR) = CAST(cc.request_id AS VARCHAR) AND cm.email = cc.email
+       WHERE CAST(cm.request_id AS VARCHAR) = $1
+       ORDER BY cm.timestamp ASC`,
+      [requestId]
+    );
+
+    const roleResult = await pool.query(
+      `SELECT role FROM confirmation_codes WHERE request_id = $1 AND email = $2`,
+      [requestId, email]
+    );
+
+    let role = roleResult.rowCount > 0 ? roleResult.rows[0].role : null;
+
+    const predefinedNote =
+      role === "buyer"
+        ? {
+            email: "system",
+            text: "Buyer: Please proceed with the payment. Kindly refrain from sharing any sensitive or personal information in this chat for security reasons.",
+            timestamp: null,
+            role: "system",
+          }
+        : role === "seller"
+        ? {
+            email: "system",
+            text: "Seller: Please wait until the buyer has completed the payment. Once payment is confirmed, you may proceed to send the required file or transaction proof. Acceptable formats include PDF, JPEG, JPG, and PNG.",
+            timestamp: null,
+            role: "system",
+          }
+        : null;
+
+    const messages = predefinedNote ? [predefinedNote, ...result.rows] : result.rows;
+
+    res.status(200).json(messages);
+  } catch (error) {
+    console.error("Error retrieving messages:", error);
+    res.status(500).json({ message: "Internal Server Error", error: error.message });
+  }
 });
 
-app.listen(port, () => {
+// File upload endpoint
+app.post("/api/uploadFiles", upload.array("files"), async (req, res) => {
+  const { requestId, email } = req.body;
+  const files = req.files;
+
+  if (!files || !requestId || !email) {
+    return res.status(400).json({ message: "Missing required fields." });
+  }
+
+  try {
+    for (const file of files) {
+      const s3Key = `chat_uploads/${requestId}/${Date.now()}-${file.originalname}`;
+      const params = {
+        Bucket: "middleman-uploads",
+        Key: s3Key,
+        Body: file.buffer,
+        ContentType: file.mimetype,
+      };
+
+      const s3Result = await s3.upload(params).promise();
+
+      await pool.query(
+        `INSERT INTO chat_messages (request_id, email, file_url, timestamp)
+         VALUES ($1, $2, $3, NOW()) RETURNING *`,
+        [requestId, email, s3Result.Location]
+      );
+
+      io.to(requestId).emit("newMessage", {
+        email,
+        fileUrl: s3Result.Location,
+        timestamp: new Date(),
+        role: "seller",
+      });
+    }
+
+    res.status(201).json({ message: "Files uploaded successfully." });
+  } catch (error) {
+    console.error("Error uploading to S3 or saving to database:", error);
+    res.status(500).json({ message: "Upload failed", error: error.message });
+  }
+});
+
+// Start the server
+server.listen(port, () => {
   console.log(`✅ Server running on port ${port}`);
 });
 
