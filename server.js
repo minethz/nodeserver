@@ -434,10 +434,11 @@ app.use(signupRoutes); // Mount signup API routes
 
 // Start the chat server
 
+app.get("/", (req, res) => {
+  res.send("Server is working!");
+});
+
 app.listen(port, () => {
   console.log(`✅ Server running on port ${port}`);
 });
 
-app.get("/", (req, res) => {
-  res.send("Server is working!");
-});
