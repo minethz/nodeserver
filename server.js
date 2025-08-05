@@ -13,7 +13,8 @@ const signupRoutes = require("./signup"); // Import all signup API routes
 const { exec } = require("child_process");
 
 const app = express();
-const port = 5001;
+const port = process.env.PORT || 5001;
+
 
 // Middleware
 app.use(cors());
@@ -458,5 +459,9 @@ exec('node signup.js', (error, stdout, stderr) => {
 });
 
 app.listen(port, () => {
-  console.log(`✅ Server running at http://localhost:${port}`);
+  console.log(`✅ Server running on port ${port}`);
+});
+
+app.get("/", (req, res) => {
+  res.send("Server is working!");
 });
