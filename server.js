@@ -433,6 +433,30 @@ app.use(profileRoutes); // Add profile routes
 app.use(signupRoutes); // Mount signup API routes
 
 // Start the chat server
+exec("node chatting.js", (error, stdout, stderr) => {
+  if (error) {
+    console.error(`Error starting chat server: ${error.message}`);
+    return;
+  }
+  if (stderr) {
+    console.error(`Chat server stderr: ${stderr}`);
+    return;
+  }
+  console.log(`Chat server stdout: ${stdout}`);
+});
+
+// Start the signup server
+exec('node signup.js', (error, stdout, stderr) => {
+  if (error) {
+    console.error(`Error starting signup server: ${error.message}`);
+    return;
+  }
+  if (stderr) {
+    console.error(`Signup server stderr: ${stderr}`);
+    return;
+  }
+  console.log(`Signup server stdout: ${stdout}`);
+});
 
 app.get("/", (req, res) => {
   res.send("Server is working!");
