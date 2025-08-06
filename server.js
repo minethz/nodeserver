@@ -882,9 +882,8 @@ app.post("/api/sendMessage", async (req, res) => {
       [requestId, userId, message]
     );
 
-    // Emit the message to the recipient
-    const recipientSocketId = /* logic to get recipient socket ID */;
-    io.to(recipientSocketId).emit("newMessage", { requestId, userId, message });
+    // Emit the message to all users in the room
+    io.to(requestId).emit("newMessage", { requestId, userId, message });
 
     res.status(200).json({ success: true, message: "Message sent" });
   } catch (error) {
@@ -1154,6 +1153,7 @@ app.post("/api/updateReportStatus", async (req, res) => {
     res.status(500).json({ error: "Server error while updating report status" });
   }
 });
+
 
 app.get('/', (req, res) => {
   res.send('Server is working');
