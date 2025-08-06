@@ -7,14 +7,12 @@ const { Pool } = require("pg");
 const path = require("path");
 const fs = require("fs");
 const AWS = require("aws-sdk");
+const { fork } = require("child_process"); // Use fork for sub-processes
 const paymentsRoutes = require("./payments"); // Import payments.js
 const profileRoutes = require("./profile"); // Import profile routes
-const signupRoutes = require("./signup"); // Import all signup API routes
-const { exec } = require("child_process");
 
 const app = express();
-const port = process.env.PORT || 5001;
-
+const port = 5001;
 
 // Middleware
 app.use(cors());
@@ -430,39 +428,25 @@ app.get("/reports/top-liked", async (req, res) => {
 
 app.use("/payments", paymentsRoutes); // Mount payments routes
 app.use(profileRoutes); // Add profile routes
-app.use(signupRoutes); // Mount signup API routes
 
-// Start the chat server
-exec("node chatting.js", (error, stdout, stderr) => {
-  if (error) {
-    console.error(`Error starting chat server: ${error.message}`);
-    return;
-  }
-  if (stderr) {
-    console.error(`Chat server stderr: ${stderr}`);
-    return;
-  }
-  console.log(`Chat server stdout: ${stdout}`);
+// Start the signup server as a child process
+const signupServer = fork(path.join(__dirname, "signup.js"));
+signupServer.on("message", (message) => {
+  console.log(`Signup server message: ${message}`);
+});
+signupServer.on("error", (error) => {
+  console.error(`Error in signup server: ${error.message}`);
 });
 
-// Start the signup server
-exec('node signup.js', (error, stdout, stderr) => {
-  if (error) {
-    console.error(`Error starting signup server: ${error.message}`);
-    return;
-  }
-  if (stderr) {
-    console.error(`Signup server stderr: ${stderr}`);
-    return;
-  }
-  console.log(`Signup server stdout: ${stdout}`);
+// Start the chat server as a child process
+const chatServer = fork(path.join(__dirname, "chatting.js"));
+chatServer.on("message", (message) => {
+  console.log(`Chat server message: ${message}`);
 });
-
-app.get("/", (req, res) => {
-  res.send("Server is working!");
+chatServer.on("error", (error) => {
+  console.error(`Error in chat server: ${error.message}`);
 });
 
 app.listen(port, () => {
-  console.log(`✅ Server running on port ${port}`);
+  console.log(`✅ Main server running at http://localhost:${port}`);
 });
-

@@ -1,6 +1,7 @@
-const express = require("express");
-const router = express.Router();
+require("dotenv").config(); // Load environment variables
+
 const { sendSignupEmail, sendMiddlemanEmail } = require('./sendEmail');
+const express = require("express");
 const { Pool } = require("pg");
 const cors = require("cors");
 const bcrypt = require("bcrypt");
@@ -10,6 +11,20 @@ const jwt = require("jsonwebtoken");
 const OpenAI = require("openai");
 const axios = require("axios");
 
+const app = express();
+app.use(express.json());
+
+// Update CORS configuration
+const allowedOrigins = ["http://localhost:3000", "http://localhost:5173"];
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+}));
 
 // PostgreSQL database connection
 const pool = new Pool({
@@ -71,7 +86,7 @@ const uploadImageUrlToS3 = async (imageUrl, originalName = "ai-generated.jpg") =
 };
 
 // Signup API
-router.post("/api/signup", upload.single("profilePhoto"), async (req, res) => {
+app.post("/api/signup", upload.single("profilePhoto"), async (req, res) => {
   const { firstName, lastName, email, password, profilePhotoUrl } = req.body; // Added profilePhotoUrl
   const profilePhoto = req.file;
 
@@ -122,7 +137,7 @@ router.post("/api/signup", upload.single("profilePhoto"), async (req, res) => {
   }
 });
 
-router.post("/api/verify-email", async (req, res) => {
+app.post("/api/verify-email", async (req, res) => {
   const { email, code } = req.body;
 
   try {
@@ -165,7 +180,7 @@ router.post("/api/verify-email", async (req, res) => {
 
 
 // Login API
-router.post("/api/login", async (req, res) => {
+app.post("/api/login", async (req, res) => {
   const { email, password } = req.body;
 
   try {
@@ -209,7 +224,7 @@ router.post("/api/login", async (req, res) => {
 });
 
 // Resend verification code API
-router.post("/api/resend-code", async (req, res) => {
+app.post("/api/resend-code", async (req, res) => {
   const { email } = req.body;
 
   try {
@@ -246,7 +261,7 @@ const { sendResetPasswordEmail } = require('./sendEmail'); // Adjust path if nee
 
 const crypto = require("crypto");
 
-router.post("/api/forgot-password", async (req, res) => {
+app.post("/api/forgot-password", async (req, res) => {
   const { email } = req.body;
 
   try {
@@ -275,7 +290,7 @@ router.post("/api/forgot-password", async (req, res) => {
     );
 
     // Construct reset link (adjust frontend URL)
-    const resetLink = `https://nodeserver-production-982a.up.railway.app/reset-password?token=${resetToken}&email=${email}`;
+    const resetLink = `http://localhost:5173/reset-password?token=${resetToken}&email=${email}`;
 
     // Send email
     await sendResetPasswordEmail(email, user.first_name, resetLink);
@@ -290,7 +305,7 @@ router.post("/api/forgot-password", async (req, res) => {
   }
 });
 
-router.post("/api/reset-password", async (req, res) => {
+app.post("/api/reset-password", async (req, res) => {
   const { email, token, newPassword } = req.body;
 
   try {
@@ -331,7 +346,7 @@ router.post("/api/reset-password", async (req, res) => {
 });
 
 // AI Profile Picture Generation API
-router.post("/api/generate-profile-pics", async (req, res) => {
+app.post("/api/generate-profile-pics", async (req, res) => {
   try {
     const response = await openai.images.generate({
       prompt: "A Pixar-style animated avatar of a pleasant character with a beautiful background, high quality, vibrant colors",
@@ -348,7 +363,7 @@ router.post("/api/generate-profile-pics", async (req, res) => {
 });
 
 // Middleman Service API
-router.post("/api/middleman-service", async (req, res) => {
+app.post("/api/middleman-service", async (req, res) => {
   const { role, firstName, lastName, email, counterpartyEmail, category, price, currency } = req.body;
 
   try {
@@ -384,8 +399,8 @@ router.post("/api/middleman-service", async (req, res) => {
     );
 
     // Generate links for buyer and seller
-    const buyerLink = `https://nodeserver-production-982a.up.railway.app/waiting?requestId=${requestId}&role=buyer`;
-    const sellerLink = `https://nodeserver-production-982a.up.railway.app/waiting?requestId=${requestId}&role=seller`;
+    const buyerLink = `http://localhost:5173/waiting?requestId=${requestId}&role=buyer`;
+    const sellerLink = `http://localhost:5173/waiting?requestId=${requestId}&role=seller`;
 
     // Send emails to both buyer and seller with their respective confirmation codes
     const buyerEmail = role === "buyer" ? email : counterpartyEmail;
@@ -402,7 +417,7 @@ router.post("/api/middleman-service", async (req, res) => {
 });
 
 // Generate and send 6-digit confirmation codes
-router.post("/api/send-confirmation-code", async (req, res) => {
+app.post("/api/send-confirmation-code", async (req, res) => {
   const { requestId, email, role } = req.body;
 
   try {
@@ -418,7 +433,7 @@ router.post("/api/send-confirmation-code", async (req, res) => {
     );
 
     // Send the confirmation code via email
-    const actionLink = `https://nodeserver-production-982a.up.railway.app/waiting?requestId=${requestId}`;
+    const actionLink = `http://localhost:5173/waiting?requestId=${requestId}`;
     await sendMiddlemanEmail(email, role, "Confirmation Code", "", "", actionLink, confirmationCode);
 
     return res.status(200).json({ message: "Confirmation code sent successfully." });
@@ -429,7 +444,7 @@ router.post("/api/send-confirmation-code", async (req, res) => {
 });
 
 // Validate the 6-digit confirmation code
-router.post("/api/validate-confirmation-code", async (req, res) => {
+app.post("/api/validate-confirmation-code", async (req, res) => {
   const { requestId, email, code, role } = req.body;
 
   try {
@@ -495,7 +510,7 @@ router.post("/api/validate-confirmation-code", async (req, res) => {
 });
 
 // Fetch user's middleman requests grouped by status
-router.get("/api/middleman-requests", async (req, res) => {
+app.get("/api/middleman-requests", async (req, res) => {
   const { email } = req.query;
 
   try {
@@ -536,7 +551,7 @@ router.get("/api/middleman-requests", async (req, res) => {
 });
 
 // Accept middleman request (seller action)
-router.post("/api/middleman-accept", async (req, res) => {
+app.post("/api/middleman-accept", async (req, res) => {
   const { requestId } = req.body;
 
   try {
@@ -554,7 +569,7 @@ router.post("/api/middleman-accept", async (req, res) => {
 });
 
 // Get middleman request status
-router.get("/api/middleman-status", async (req, res) => {
+app.get("/api/middleman-status", async (req, res) => {
   const { requestId } = req.query;
 
   try {
@@ -574,7 +589,7 @@ router.get("/api/middleman-status", async (req, res) => {
   }
 });
 
-router.get("/api/middleman-confirmation-status", async (req, res) => {
+app.get("/api/middleman-confirmation-status", async (req, res) => {
   const { requestId } = req.query;
 
   try {
@@ -595,7 +610,7 @@ router.get("/api/middleman-confirmation-status", async (req, res) => {
 });
 
 // Mark payment as paid
-router.post("/api/markPaymentAsPaid", async (req, res) => {
+app.post("/api/markPaymentAsPaid", async (req, res) => {
   const { requestId } = req.body;
 
   if (!requestId) {
@@ -615,7 +630,7 @@ router.post("/api/markPaymentAsPaid", async (req, res) => {
 });
 
 // Get payment status
-router.get("/api/getPaymentStatus", async (req, res) => {
+app.get("/api/getPaymentStatus", async (req, res) => {
   const { requestId } = req.query;
 
   if (!requestId) {
@@ -641,8 +656,16 @@ router.get("/api/getPaymentStatus", async (req, res) => {
 
 // Removed chatting-related functions. These have been moved to chatting.js.
 
+const PORT = 5002;
+app.listen(PORT, () => {
+  console.log(`🚀 Signup server running on http://localhost:${PORT}`);
+  if (process.send) {
+    process.send(`Signup server started on port ${PORT}`);
+  }
+});
+
 // Profile Photo Upload API
-router.post("/api/upload-profile-photo", upload.single("profilePhoto"), async (req, res) => {
+app.post("/api/upload-profile-photo", upload.single("profilePhoto"), async (req, res) => {
   const profilePhoto = req.file;
   const { userId } = req.body; // Get user ID from the request
 
@@ -667,7 +690,7 @@ router.post("/api/upload-profile-photo", upload.single("profilePhoto"), async (r
 });
 
 // Fetch category and price for a specific request
-router.get("/api/getCategoryAndPrice/:requestId", async (req, res) => {
+app.get("/api/getCategoryAndPrice/:requestId", async (req, res) => {
   const { requestId } = req.params;
 
   try {
@@ -688,7 +711,7 @@ router.get("/api/getCategoryAndPrice/:requestId", async (req, res) => {
 });
 
 // Mark the transaction as completed
-router.post("/api/confirmTransaction", async (req, res) => {
+app.post("/api/confirmTransaction", async (req, res) => {
   const { requestId } = req.body;
 
   if (!requestId) {
@@ -710,7 +733,7 @@ router.post("/api/confirmTransaction", async (req, res) => {
 });
 
 // Check if transaction is completed
-router.get("/api/getTransactionStatus", async (req, res) => {
+app.get("/api/getTransactionStatus", async (req, res) => {
   const { requestId } = req.query;
 
   if (!requestId) {
@@ -735,7 +758,7 @@ router.get("/api/getTransactionStatus", async (req, res) => {
 });
 
 // Fetch the total amount for completed transactions for a seller
-router.get("/api/getCompletedAmount", async (req, res) => {
+app.get("/api/getCompletedAmount", async (req, res) => {
   const { email } = req.query;
 
   if (!email) {
@@ -760,7 +783,7 @@ router.get("/api/getCompletedAmount", async (req, res) => {
 });
 
 // Withdraw amount API
-router.post("/api/withdrawAmount", async (req, res) => {
+app.post("/api/withdrawAmount", async (req, res) => {
   const { email } = req.body;
 
   if (!email) {
@@ -801,7 +824,7 @@ router.post("/api/withdrawAmount", async (req, res) => {
 });
 
 // Fetch the seller's amount for completed transactions
-router.get("/api/getSellerAmount", async (req, res) => {
+app.get("/api/getSellerAmount", async (req, res) => {
   const { email } = req.query;
 
   if (!email) {
@@ -830,7 +853,7 @@ router.get("/api/getSellerAmount", async (req, res) => {
 });
 
 // Create Withdraw Request API
-router.post("/api/createWithdrawRequest", async (req, res) => {
+app.post("/api/createWithdrawRequest", async (req, res) => {
   const { userId, email, amount, cryptoCurrency, walletAddress } = req.body;
 
   if (!userId || !email || !amount || !cryptoCurrency || !walletAddress) {
@@ -862,7 +885,7 @@ router.post("/api/createWithdrawRequest", async (req, res) => {
 });
 
 // Fetch Crypto Currencies API
-router.get("/api/getCryptoCurrencies", async (req, res) => {
+app.get("/api/getCryptoCurrencies", async (req, res) => {
   try {
     const response = await axios.get(
       "https://api.coingecko.com/api/v3/coins/markets",
@@ -898,7 +921,7 @@ const ID_ANALYZER_API_KEY = "cHQAJmQsZf3KRDT2KoC2qenfRBJT6UoC";
 const ID_ANALYZER_API_URL = "https://api2.idanalyzer.com/scan";
 
 // Validate and extract document details
-router.post("/api/verify-id", upload.single("document"), async (req, res) => {
+app.post("/api/verify-id", upload.single("document"), async (req, res) => {
   console.log("Headers:", req.headers);
   console.log("File:", req.file);
   console.log("Body:", req.body);
@@ -999,7 +1022,7 @@ router.post("/api/verify-id", upload.single("document"), async (req, res) => {
 });
 
 // Confirm and save verification details
-router.post("/api/confirmVerification", async (req, res) => {
+app.post("/api/confirmVerification", async (req, res) => {
   const { documentNumber, fullName, dob } = req.body;
 
   try {
@@ -1046,7 +1069,7 @@ router.post("/api/confirmVerification", async (req, res) => {
 });
 
 // Fetch verification status
-router.get("/api/getVerificationStatus", async (req, res) => {
+app.get("/api/getVerificationStatus", async (req, res) => {
   const { userId } = req.query;
 
   if (!userId) {
@@ -1069,6 +1092,3 @@ router.get("/api/getVerificationStatus", async (req, res) => {
     res.status(500).json({ message: "Internal Server Error", error: error.message });
   }
 });
-
-// Move all routes from signup.js to server.js and export the router
-module.exports = router;
