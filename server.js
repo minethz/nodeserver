@@ -71,8 +71,6 @@ io.on("connection", (socket) => {
 
 
 
-const crypto = require("crypto");
-
 const ID_ANALYZER_API_KEY = "cHQAJmQsZf3KRDT2KoC2qenfRBJT6UoC";
 const ID_ANALYZER_API_URL = "https://api2.idanalyzer.com/scan";
 
