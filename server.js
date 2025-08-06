@@ -69,7 +69,6 @@ io.on("connection", (socket) => {
   });
 });
 
-const { sendResetPasswordEmail } = require('./sendEmail'); // Adjust path if needed
 
 const crypto = require("crypto");
 
