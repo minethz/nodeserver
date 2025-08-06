@@ -447,6 +447,12 @@ chatServer.on("error", (error) => {
   console.error(`Error in chat server: ${error.message}`);
 });
 
+
+app.get('/', (req, res) => {
+  res.send('Server is working');
+});
+
+
 app.listen(port, () => {
   console.log(`✅ Main server running at http://localhost:${port}`);
 });
