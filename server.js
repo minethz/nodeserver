@@ -1155,9 +1155,10 @@ app.post("/api/updateReportStatus", async (req, res) => {
 });
 
 
-app.get('/', (req, res) => {
-  res.send('Server is working');
+app.get("/protected", authenticateUser, (req, res) => {
+  res.json({ message: "Authorized" });
 });
+
 
 // Start the server
 server.listen(port, () => {
