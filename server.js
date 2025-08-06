@@ -212,7 +212,7 @@ app.post("/api/login", async (req, res) => {
     const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: "1d" });
     console.log("JWT generated successfully for user ID:", user.id); // Debug log
 
-    res.status(200).json({ success: true, token });
+    res.status(200).json({ success: true, token, user: { id: user.id, email: user.email, username: user.username } });
   } catch (error) {
     console.error("Error during login:", error); // Debug log
     res.status(500).json({ error: "Server error during login" });
