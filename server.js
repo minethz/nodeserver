@@ -209,18 +209,6 @@ app.get("/platforms", (req, res) => {
   res.json(platforms);
 });
 
-const uploadImageUrlToS3 = async (imageUrl, originalName = "ai-generated.jpg") => {
-  const response = await axios.get(imageUrl, { responseType: "arraybuffer" });
-  const fileBuffer = Buffer.from(response.data, "binary");
-  const file = {
-    originalname: originalName,
-    mimetype: "image/jpeg",
-    buffer: fileBuffer,
-  };
-
-  return await uploadToS3(file);
-};
-
 // Routes from signup.js
 app.post("/api/signup", upload.single("profilePhoto"), async (req, res) => {
   const { firstName, lastName, email, password, profilePhotoUrl } = req.body; // Added profilePhotoUrl
@@ -907,7 +895,7 @@ app.get("/api/middleman-status", async (req, res) => {
       [requestId]
     );
 
-    if (result.rows.length === 0) {
+    if result.rows.length === 0) {
       return res.status(404).json({ message: "Request not found." });
     }
 
