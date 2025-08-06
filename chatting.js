@@ -16,7 +16,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 app.use(express.json());
 
 // Update CORS configuration
-const allowedOrigins = ["http://nodeserver-production-982a.up.railway.app"];
+const allowedOrigins = ["http://localhost:3000", "http://localhost:5173"];
 app.use(cors({
   origin: (origin, callback) => {
     if (!origin || allowedOrigins.includes(origin)) {
@@ -538,7 +538,4 @@ app.post("/api/updateReportStatus", async (req, res) => {
 const PORT = 5020;
 server.listen(PORT, () => {
   console.log(`🚀 Chat server running on http://localhost:${PORT}`);
-  if (process.send) {
-    process.send(`Chat server started on port ${PORT}`);
-  }
 });
