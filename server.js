@@ -12,6 +12,8 @@ const axios = require("axios");
 const http = require("http");
 const { Server } = require("socket.io");
 const crypto = require("crypto");
+const paymentsRoutes = require("./payments"); // Import payments.js
+const profileRoutes = require("./profile");
 const { sendSignupEmail, sendMiddlemanEmail, sendResetPasswordEmail } = require("./sendEmail");
 
 const app = express();
