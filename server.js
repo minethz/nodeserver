@@ -99,42 +99,53 @@ const uploadImageUrlToS3 = async (imageUrl, originalName = "ai-generated.jpg") =
 
 // Routes from signup.js
 app.post("/api/signup", upload.single("profilePhoto"), async (req, res) => {
+  const { firstName, lastName, email, password, profilePhotoUrl } = req.body; // Added profilePhotoUrl
+  const profilePhoto = req.file;
+
   try {
-    const { email, password, username } = req.body;
-
-    // Validate request body
-    if (!email || !password || !username) {
-      return res.status(400).json({ error: "All fields are required" });
-    }
-
-    // Check if the user already exists
-    const existingUser = await pool.query("SELECT id FROM users WHERE email = $1", [email]);
+    const existingUser = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
     if (existingUser.rows.length > 0) {
-      return res.status(400).json({ error: "User with this email already exists" });
+      return res.status(400).json({ message: "Email already registered" });
     }
 
-    // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
+    let profilePhotoUrlToSave = null;
 
-    // Create the user in the database
-    const newUser = await pool.query(
-      `INSERT INTO users (email, password, username) VALUES ($1, $2, $3) RETURNING id`,
-      [email, hashedPassword, username]
+    if (profilePhoto) {
+      profilePhotoUrlToSave = await uploadToS3(profilePhoto);
+    } else if (profilePhotoUrl) {
+      // Re-upload AI-generated profile pic to S3 to avoid expiry
+      profilePhotoUrlToSave = await uploadImageUrlToS3(profilePhotoUrl);
+    }
+
+    if (!profilePhotoUrlToSave) {
+      return res.status(400).json({ message: "Profile photo is required." });
+    }
+
+    // Generate a 6-digit verification code
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // Save user data temporarily in the verification table
+    await pool.query(
+      `INSERT INTO email_verifications (first_name, last_name, email, password, profile_photo, verification_code, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, NOW())
+       ON CONFLICT (email)
+       DO UPDATE SET first_name = $1, last_name = $2, password = $4, profile_photo = $5, verification_code = $6, created_at = NOW()`,
+      [firstName, lastName, email, hashedPassword, profilePhotoUrlToSave, verificationCode]
     );
 
     // Send verification email
-    const verificationToken = crypto.randomBytes(32).toString("hex");
-    await pool.query(
-      `INSERT INTO email_verifications (user_id, token) VALUES ($1, $2)`,
-      [newUser.rows[0].id, verificationToken]
-    );
-    const verificationLink = `${req.protocol}://${req.get("host")}/api/verify-email?token=${verificationToken}`;
-    await sendSignupEmail(email, verificationLink);
+    await sendSignupEmail(email, `${firstName} ${lastName}`, verificationCode);
 
-    res.status(201).json({ success: true, userId: newUser.rows[0].id });
+    return res.status(201).json({
+      message: "Verification email sent. Please verify your email to complete the signup process.",
+    });
   } catch (error) {
-    console.error("Error during signup:", error);
-    res.status(500).json({ error: "Server error during signup" });
+    console.error("Signup error:", error);
+    return res.status(500).json({
+      message: "Internal Server Error",
+      error: error.message,
+    });
   }
 });
 
@@ -180,20 +191,14 @@ app.post("/api/verify-email", async (req, res) => {
 app.post("/api/login", async (req, res) => {
   const { email, password } = req.body;
 
-  console.log("Login request received:", { email }); // Debug log
-
   if (!email || !password) {
-    console.error("Missing email or password in request body");
     return res.status(400).json({ error: "Email and password are required" });
   }
 
   try {
     // Check if the user exists
     const userResult = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
-    console.log("User query result:", userResult.rows); // Debug log
-
     if (userResult.rows.length === 0) {
-      console.error("User not found for email:", email);
       return res.status(401).json({ error: "Invalid email or password" });
     }
 
@@ -201,20 +206,16 @@ app.post("/api/login", async (req, res) => {
 
     // Check if the password matches
     const isPasswordValid = await bcrypt.compare(password, user.password);
-    console.log("Password validation result:", isPasswordValid); // Debug log
-
     if (!isPasswordValid) {
-      console.error("Invalid password for email:", email);
       return res.status(401).json({ error: "Invalid email or password" });
     }
 
     // Generate a JWT token
     const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: "1d" });
-    console.log("JWT generated successfully for user ID:", user.id); // Debug log
 
-    res.status(200).json({ success: true, token, user: { id: user.id, email: user.email, username: user.username } });
+    res.status(200).json({ success: true, token });
   } catch (error) {
-    console.error("Error during login:", error); // Debug log
+    console.error("Error during login:", error);
     res.status(500).json({ error: "Server error during login" });
   }
 });
