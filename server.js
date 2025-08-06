@@ -895,7 +895,7 @@ app.get("/api/middleman-status", async (req, res) => {
       [requestId]
     );
 
-    if result.rows.length === 0) {
+    if (result.rows.length === 0) {
       return res.status(404).json({ message: "Request not found." });
     }
 
