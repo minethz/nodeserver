@@ -4,7 +4,7 @@ const cors = require("cors"); // Import CORS middleware
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY); // Updated secret key
 
 const app = express();
-app.use(cors({ origin: "http://localhost:5173" })); // Ensure CORS allows requests from frontend
+app.use(cors({ origin: "http://nodeserver-production-982a.up.railway.app" })); // Ensure CORS allows requests from frontend
 
 const router = express.Router();
 
