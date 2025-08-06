@@ -435,13 +435,8 @@ app.get("/", (req, res) => {
   res.send("Welcome to the server!");
 });
 
-app.use(cors({
-  origin: "http://localhost:5174", // frontend URL
-  methods: ["GET", "POST", "PUT", "DELETE"],
-  credentials: true
-}));
 
-
+app.use(cors());
 
 app.listen(port, () => {
   console.log(`✅ Server running at http://localhost:${port}`);

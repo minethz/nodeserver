@@ -545,6 +545,8 @@ app.use(cors({
   credentials: true
 }));
 
+app.use(cors());
+
 
 const PORT = 5020;
 server.listen(PORT, () => {

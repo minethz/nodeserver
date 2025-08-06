@@ -14,17 +14,7 @@ const axios = require("axios");
 const app = express();
 app.use(express.json());
 
-// Update CORS configuration
-const allowedOrigins = ["http://localhost:3000", "http://localhost:5173"];
-app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
-}));
+
 
 // PostgreSQL database connection
 const pool = new Pool({
@@ -660,13 +650,9 @@ app.get("/", (req, res) => {
   res.send("Welcome to the server!");
 });
 
-app.use(cors({
-  origin: "http://localhost:5174", // frontend URL
-  methods: ["GET", "POST", "PUT", "DELETE"],
-  credentials: true
-}));
 
 
+app.use(cors());
 
 const PORT = 5002;
 app.listen(PORT, () => {
