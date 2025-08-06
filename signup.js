@@ -660,6 +660,12 @@ app.get("/", (req, res) => {
   res.send("Welcome to the server!");
 });
 
+app.use(cors({
+  origin: "http://localhost:5174", // frontend URL
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true
+}));
+
 
 
 const PORT = 5002;
