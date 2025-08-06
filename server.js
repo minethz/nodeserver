@@ -373,6 +373,25 @@ app.post("/api/generate-profile-pics", async (req, res) => {
   }
 });
 
+app.get("/reports/top-liked", async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT 
+         scam_reports.id AS id, username, platform, 
+         SUM(CASE WHEN reaction = 'like' THEN 1 ELSE 0 END) AS likes
+       FROM scam_reports
+       LEFT JOIN report_reactions ON scam_reports.id = report_reactions.report_id
+       GROUP BY scam_reports.id
+       ORDER BY likes DESC
+       LIMIT 10`
+    );
+    res.status(200).json(result.rows);
+  } catch (error) {
+    console.error("Error fetching top liked reports:", error);
+    res.status(500).json({ error: "Server error while fetching top liked reports" });
+  }
+});
+
 app.post("/api/middleman-service", async (req, res) => {
   const { role, firstName, lastName, email, counterpartyEmail, category, price, currency } = req.body;
 
