@@ -656,8 +656,8 @@ app.get("/api/getPaymentStatus", async (req, res) => {
 
 // Removed chatting-related functions. These have been moved to chatting.js.
 
-app.get("/get", (req, res) => {
-  res.send("Server running");
+app.get("/", (req, res) => {
+  res.send("Welcome to the server!");
 });
 
 
