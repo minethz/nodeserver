@@ -8,9 +8,6 @@ const multer = require("multer");
 const AWS = require("aws-sdk");
 const { sendMiddlemanEmail } = require("./sendEmail"); // Import email utility
 
-// Shared database connection
-const pool = require("./shared/db"); // Import shared DB connection
-
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
@@ -19,7 +16,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 app.use(express.json());
 
 // Update CORS configuration
-const allowedOrigins = ["http://localhost:3000", "http://localhost:5173"];
+const allowedOrigins = ["https://nodeserver-production-982a.up.railway.app", "http://localhost:3000", "http://localhost:5173"];
 app.use(cors({
   origin: (origin, callback) => {
     if (!origin || allowedOrigins.includes(origin)) {
@@ -29,6 +26,18 @@ app.use(cors({
     }
   },
 }));
+
+// PostgreSQL database connection
+const pool = new Pool({
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  port: process.env.DB_PORT,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  ssl: {
+    rejectUnauthorized: false,
+  },
+});
 
 // AWS S3 configuration
 AWS.config.update({
@@ -522,27 +531,6 @@ app.post("/api/updateReportStatus", async (req, res) => {
     res.status(200).json({ message: "Report status updated and emails sent successfully." });
   } catch (error) {
     console.error("Error updating report status:", error);
-    res.status(500).json({ message: "Internal Server Error", error: error.message });
-  }
-});
-
-// New endpoint to fetch category and price for a request
-app.get("/api/getCategoryAndPrice/:requestId", async (req, res) => {
-  const { requestId } = req.params;
-
-  try {
-    const result = await pool.query(
-      `SELECT category, price, currency FROM middleman_services WHERE id = $1`,
-      [requestId]
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ message: "Request not found." });
-    }
-
-    res.status(200).json(result.rows[0]); // Ensure correct data is returned
-  } catch (error) {
-    console.error("Error fetching category and price:", error);
     res.status(500).json({ message: "Internal Server Error", error: error.message });
   }
 });

@@ -1072,12 +1072,3 @@ router.get("/api/getVerificationStatus", async (req, res) => {
 
 // Move all routes from signup.js to server.js and export the router
 module.exports = router;
-
-// Update CORS configuration
-const allowedOrigins = ["https://nodeserver-production-982a.up.railway.app", "http://localhost:3000", "http://localhost:5173"];
-app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
