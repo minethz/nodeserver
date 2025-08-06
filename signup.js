@@ -656,6 +656,11 @@ app.get("/api/getPaymentStatus", async (req, res) => {
 
 // Removed chatting-related functions. These have been moved to chatting.js.
 
+app.get("/get", (req, res) => {
+  res.json({ message: "Server is running successfully!" });
+});
+
+
 const PORT = 5002;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);

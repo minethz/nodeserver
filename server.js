@@ -430,30 +430,12 @@ app.use("/payments", paymentsRoutes); // Mount payments routes
 app.use(profileRoutes); // Add profile routes
 
 // Start the chat server
-exec("node /Users/minethperera/Desktop/Scam_detection_System/platform-api/chatting.js", (error, stdout, stderr) => {
-  if (error) {
-    console.error(`Error starting chat server: ${error.message}`);
-    return;
-  }
-  if (stderr) {
-    console.error(`Chat server stderr: ${stderr}`);
-    return;
-  }
-  console.log(`Chat server stdout: ${stdout}`);
+
+app.get("/get", (req, res) => {
+  res.json({ message: "Server is running successfully!" });
 });
 
-// Start the signup server
-exec('node "/Users/minethperera/Desktop/deploy one/Scam_detection_System/platform-api/signup.js"', (error, stdout, stderr) => {
-  if (error) {
-    console.error(`Error starting signup server: ${error.message}`);
-    return;
-  }
-  if (stderr) {
-    console.error(`Signup server stderr: ${stderr}`);
-    return;
-  }
-  console.log(`Signup server stdout: ${stdout}`);
-});
+
 
 app.listen(port, () => {
   console.log(`✅ Server running at http://localhost:${port}`);
