@@ -46,7 +46,7 @@ AWS.config.update({
 const s3 = new AWS.S3();
 
 // Multer file upload config
-const storage = multer.memoryStorage();
+const storage = multer.memoryStorage(); // Store files in memory temporarily
 const upload = multer({ storage });
 
 // JWT secret
@@ -69,8 +69,6 @@ io.on("connection", (socket) => {
   });
 });
 
-
-
 const ID_ANALYZER_API_KEY = "cHQAJmQsZf3KRDT2KoC2qenfRBJT6UoC";
 const ID_ANALYZER_API_URL = "https://api2.idanalyzer.com/scan";
 
@@ -90,7 +88,126 @@ const uploadToS3 = async (file) => {
   return data.Location;
 };
 
+const uploadImageUrlToS3 = async (imageUrl, originalName = "ai-generated.jpg") => {
+  const response = await axios.get(imageUrl, { responseType: "arraybuffer" });
+  const fileBuffer = Buffer.from(response.data, "binary");
+  const file = {
+    originalname: originalName,
+    mimetype: "image/jpeg",
+    buffer: fileBuffer,
+  };
 
+  return await uploadToS3(file);
+};
+
+// Platform list
+const platforms = [
+  { id: 1, name: "Telegram" },
+  { id: 2, name: "Facebook" },
+  { id: 3, name: "Instagram" },
+  { id: 4, name: "Twitter" },
+  { id: 5, name: "WhatsApp" },
+  { id: 6, name: "Snapchat" },
+  { id: 7, name: "TikTok" },
+  { id: 8, name: "LinkedIn" },
+  { id: 9, name: "Reddit" },
+  { id: 10, name: "YouTube" },
+  { id: 11, name: "Pinterest" },
+  { id: 12, name: "WeChat" },
+  { id: 13, name: "Discord" },
+  { id: 14, name: "Twitch" },
+  { id: 15, name: "Clubhouse" },
+  { id: 16, name: "Signal" },
+  { id: 17, name: "Viber" },
+  { id: 18, name: "Skype" },
+  { id: 19, name: "Tumblr" },
+  { id: 20, name: "Quora" },
+  { id: 21, name: "Medium" },
+  { id: 22, name: "Threads" },
+  { id: 23, name: "Kik" },
+  { id: 24, name: "LINE" },
+  { id: 25, name: "Flickr" },
+  { id: 26, name: "MeetMe" },
+  { id: 27, name: "Tagged" },
+  { id: 28, name: "Badoo" },
+  { id: 29, name: "Tinder" },
+  { id: 30, name: "Grindr" },
+  { id: 31, name: "Hinge" },
+  { id: 32, name: "OKCupid" },
+  { id: 33, name: "Zoosk" },
+  { id: 34, name: "Match.com" },
+  { id: 35, name: "Plenty of Fish" },
+  { id: 36, name: "eHarmony" },
+  { id: 37, name: "Weibo" },
+  { id: 38, name: "Douyin" },
+  { id: 39, name: "QQ" },
+  { id: 40, name: "Xing" },
+  { id: 41, name: "Nextdoor" },
+  { id: 42, name: "Myspace" },
+  { id: 43, name: "Periscope" },
+  { id: 44, name: "Houseparty" },
+  { id: 45, name: "Gab" },
+  { id: 46, name: "Parler" },
+  { id: 47, name: "Truth Social" },
+  { id: 48, name: "Mastodon" },
+  { id: 49, name: "Ello" },
+  { id: 50, name: "Vero" },
+  { id: 51, name: "Steemit" },
+  { id: 52, name: "BitClout" },
+  { id: 53, name: "Minds" },
+  { id: 54, name: "MeWe" },
+  { id: 55, name: "Hive" },
+  { id: 56, name: "Rumble" },
+  { id: 57, name: "Omegle" },
+  { id: 58, name: "Chatroulette" },
+  { id: 59, name: "Habbo" },
+  { id: 60, name: "IMVU" },
+  { id: 61, name: "Roblox" },
+  { id: 62, name: "Fortnite" },
+  { id: 63, name: "Minecraft" },
+  { id: 64, name: "Club Penguin" },
+  { id: 65, name: "Second Life" },
+  { id: 66, name: "VRChat" },
+  { id: 67, name: "DeviantArt" },
+  { id: 68, name: "ArtStation" },
+  { id: 69, name: "Behance" },
+  { id: 70, name: "Dribbble" },
+  { id: 71, name: "GitHub" },
+  { id: 72, name: "GitLab" },
+  { id: 73, name: "Stack Overflow" },
+  { id: 74, name: "BitBucket" },
+  { id: 75, name: "Trello" },
+  { id: 76, name: "Asana" },
+  { id: 77, name: "Slack" },
+  { id: 78, name: "Microsoft Teams" },
+  { id: 79, name: "Zoom" },
+  { id: 80, name: "Google Meet" },
+  { id: 81, name: "BlueJeans" },
+  { id: 82, name: "Webex" },
+  { id: 83, name: "GoToMeeting" },
+  { id: 84, name: "Hopin" },
+  { id: 85, name: "Eventbrite" },
+  { id: 86, name: "Meetup" },
+  { id: 87, name: "Kickstarter" },
+  { id: 88, name: "Indiegogo" },
+  { id: 89, name: "Patreon" },
+  { id: 90, name: "Buy Me a Coffee" },
+  { id: 91, name: "Ko-fi" },
+  { id: 92, name: "Substack" },
+  { id: 93, name: "Locals" },
+  { id: 94, name: "OnlyFans" },
+  { id: 95, name: "Fanbase" },
+  { id: 96, name: "Cameo" },
+  { id: 97, name: "TeeSpring" },
+  { id: 98, name: "Etsy" },
+  { id: 99, name: "Amazon" },
+  { id: 100, name: "eBay" }
+];
+
+// Routes
+app.get("/platforms", (req, res) => {
+  res.json(platforms);
+});
 
 const uploadImageUrlToS3 = async (imageUrl, originalName = "ai-generated.jpg") => {
   const response = await axios.get(imageUrl, { responseType: "arraybuffer" });
@@ -370,6 +487,190 @@ app.post("/api/generate-profile-pics", async (req, res) => {
   } catch (error) {
     console.error("Error generating AI profile pictures:", error);
     res.status(500).json({ message: "Failed to generate profile pictures." });
+  }
+});
+
+app.post("/report", upload.single("screenshot"), async (req, res) => {
+  try {
+    const {
+      platform,
+      username,
+      contactInfo,
+      incidentType,
+      description,
+      dateTime,
+      paymentDetails,
+      victimEmail,
+      userId, // Add userId to the request body
+    } = req.body;
+
+    if (!platform || !username || !incidentType || !description || !userId) {
+      return res.status(400).json({ error: "Required fields are missing" });
+    }
+
+    // Check if the user has already reported this username or contact info
+    const existingReport = await pool.query(
+      `SELECT id FROM scam_reports 
+       WHERE user_id = $1 AND (username = $2 OR contact_info = $3)`,
+      [userId, username, contactInfo]
+    );
+
+    if (existingReport.rows.length > 0) {
+      return res.status(400).json({ error: "You can only report this user one time only" });
+    }
+
+    // Upload the file to S3
+    const fileContent = req.file?.buffer; // Get file content from memory
+    const fileName = req.file ? `${Date.now()}-${req.file.originalname}` : null;
+    let screenshotUrl = null;
+
+    if (fileContent && fileName) {
+      const params = {
+        Bucket: "legitprove-scam-uploads", // S3 bucket name
+        Key: fileName, // File name to save in S3
+        Body: fileContent,
+        ContentType: req.file.mimetype, // Set the MIME type of the file
+      };
+
+      const uploadResult = await s3.upload(params).promise();
+      screenshotUrl = uploadResult.Location; // S3 URL of the uploaded file
+    }
+
+    // Save the report to PostgreSQL
+    const result = await pool.query(
+      `INSERT INTO scam_reports 
+        (platform, username, contact_info, incident_type, description, date_time, payment_details, victim_email, screenshot_path, user_id)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id`,
+      [
+        platform,
+        username,
+        contactInfo,
+        incidentType,
+        description,
+        dateTime,
+        paymentDetails,
+        victimEmail,
+        screenshotUrl, // Save the S3 URL to DB
+        userId, // Associate the report with the user
+      ]
+    );
+
+    res.status(201).json({ success: true, reportId: result.rows[0].id });
+  } catch (error) {
+    console.error("Error inserting report:", error);
+    res.status(500).json({ error: "Server error while submitting report" });
+  }
+});
+
+app.get("/reports", async (req, res) => {
+  const { userId } = req.query; // Extract userId from query parameters
+
+  if (!userId) {
+    return res.status(400).json({ error: "User ID is required" });
+  }
+
+  try {
+    const result = await pool.query(
+      `SELECT username, platform, incident_type, description, date_time 
+       FROM scam_reports 
+       WHERE user_id = $1 
+       ORDER BY date_time DESC`,
+      [userId] // Filter reports by userId
+    );
+    res.status(200).json(result.rows);
+  } catch (error) {
+    console.error("Error fetching scam reports:", error);
+    res.status(500).json({ error: "Server error while fetching scam reports" });
+  }
+});
+
+app.get("/reports/search", async (req, res) => {
+  const { username } = req.query;
+  if (!username) {
+    return res.status(400).json({ error: "Username query parameter is required" });
+  }
+
+  try {
+    const result = await pool.query(
+      "SELECT username, platform, incident_type AS \"incidentType\" FROM scam_reports WHERE username ILIKE $1 LIMIT 10",
+      [`%${username}%`]
+    );
+    res.status(200).json(result.rows);
+  } catch (error) {
+    console.error("Error searching reports:", error);
+    res.status(500).json({ error: "Server error while searching reports" });
+  }
+});
+
+app.get("/reports/details", async (req, res) => {
+  const { username } = req.query;
+  if (!username) {
+    return res.status(400).json({ error: "Username query parameter is required" });
+  }
+
+  try {
+    const result = await pool.query(
+      `SELECT id, username, platform, incident_type AS "incidentType", description, date_time AS "dateTime", 
+              contact_info AS "contactInfo", victim_email AS "victimEmail"
+       FROM scam_reports WHERE username = $1`,
+      [username]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Report not found" });
+    }
+
+    res.status(200).json(result.rows[0]); // Include the id field in the response
+  } catch (error) {
+    console.error("Error fetching report details:", error);
+    res.status(500).json({ error: "Server error while fetching report details" });
+  }
+});
+
+app.get("/reports/reaction-counts", async (req, res) => {
+  const { reportId } = req.query;
+
+  if (!reportId) {
+    return res.status(400).json({ error: "Report ID is required" });
+  }
+
+  try {
+    const result = await pool.query(
+      `SELECT 
+         SUM(CASE WHEN reaction = 'like' THEN 1 ELSE 0 END) AS likes,
+         SUM(CASE WHEN reaction = 'dislike' THEN 1 ELSE 0 END) AS dislikes
+       FROM report_reactions WHERE report_id = $1`,
+      [reportId]
+    );
+
+    res.status(200).json(result.rows[0]);
+  } catch (error) {
+    console.error("Error fetching reaction counts:", error);
+    res.status(500).json({ error: "Server error while fetching reaction counts" });
+  }
+});
+
+app.get("/reports/user-reaction", async (req, res) => {
+  const { reportId, userId } = req.query;
+
+  if (!reportId || !userId) {
+    return res.status(400).json({ error: "Report ID and User ID are required" });
+  }
+
+  try {
+    const result = await pool.query(
+      "SELECT reaction FROM report_reactions WHERE report_id = $1 AND user_id = $2",
+      [reportId, userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(200).json({ reaction: null });
+    }
+
+    res.status(200).json({ reaction: result.rows[0].reaction });
+  } catch (error) {
+    console.error("Error fetching user reaction:", error);
+    res.status(500).json({ error: "Server error while fetching user reaction" });
   }
 });
 
@@ -1540,6 +1841,9 @@ app.post("/api/updateReportStatus", async (req, res) => {
     res.status(500).json({ message: "Internal Server Error", error: error.message });
   }
 });
+
+app.use("/payments", paymentsRoutes); // Mount payments routes
+app.use(profileRoutes); // Add profile routes
 
 
 app.get('/', (req, res) => {
