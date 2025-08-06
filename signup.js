@@ -12,6 +12,8 @@ const OpenAI = require("openai");
 const axios = require("axios");
 
 const app = express();
+
+app.use(cors());
 app.use(express.json());
 
 
@@ -650,9 +652,6 @@ app.get("/", (req, res) => {
   res.send("Welcome to the server!");
 });
 
-
-
-app.use(cors());
 
 const PORT = 5002;
 app.listen(PORT, () => {

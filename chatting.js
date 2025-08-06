@@ -8,11 +8,13 @@ const multer = require("multer");
 const AWS = require("aws-sdk");
 const { sendMiddlemanEmail } = require("./sendEmail"); // Import email utility
 
+
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 const upload = multer({ storage: multer.memoryStorage() });
 
+app.use(cors());
 app.use(express.json());
 
 // Update CORS configuration
@@ -539,13 +541,6 @@ app.get("/", (req, res) => {
   res.send("Welcome to the server!");
 });
 
-app.use(cors({
-  origin: "http://localhost:5174", // frontend URL
-  methods: ["GET", "POST", "PUT", "DELETE"],
-  credentials: true
-}));
-
-app.use(cors());
 
 
 const PORT = 5020;

@@ -436,7 +436,6 @@ app.get("/", (req, res) => {
 });
 
 
-app.use(cors());
 
 app.listen(port, () => {
   console.log(`✅ Server running at http://localhost:${port}`);
