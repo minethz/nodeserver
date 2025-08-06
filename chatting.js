@@ -535,6 +535,11 @@ app.post("/api/updateReportStatus", async (req, res) => {
   }
 });
 
+app.get("/get", (req, res) => {
+  res.send("Server running");
+});
+
+
 const PORT = 5020;
 server.listen(PORT, () => {
   console.log(`🚀 Chat server running on http://localhost:${PORT}`);

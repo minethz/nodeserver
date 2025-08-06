@@ -432,7 +432,7 @@ app.use(profileRoutes); // Add profile routes
 // Start the chat server
 
 app.get("/get", (req, res) => {
-  res.json({ message: "Server is running successfully!" });
+  res.send("Server running");
 });
 
 
