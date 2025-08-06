@@ -180,14 +180,20 @@ app.post("/api/verify-email", async (req, res) => {
 app.post("/api/login", async (req, res) => {
   const { email, password } = req.body;
 
+  console.log("Login request received:", { email }); // Debug log
+
   if (!email || !password) {
+    console.error("Missing email or password in request body");
     return res.status(400).json({ error: "Email and password are required" });
   }
 
   try {
     // Check if the user exists
     const userResult = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
+    console.log("User query result:", userResult.rows); // Debug log
+
     if (userResult.rows.length === 0) {
+      console.error("User not found for email:", email);
       return res.status(401).json({ error: "Invalid email or password" });
     }
 
@@ -195,16 +201,20 @@ app.post("/api/login", async (req, res) => {
 
     // Check if the password matches
     const isPasswordValid = await bcrypt.compare(password, user.password);
+    console.log("Password validation result:", isPasswordValid); // Debug log
+
     if (!isPasswordValid) {
+      console.error("Invalid password for email:", email);
       return res.status(401).json({ error: "Invalid email or password" });
     }
 
     // Generate a JWT token
     const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: "1d" });
+    console.log("JWT generated successfully for user ID:", user.id); // Debug log
 
     res.status(200).json({ success: true, token });
   } catch (error) {
-    console.error("Error during login:", error);
+    console.error("Error during login:", error); // Debug log
     res.status(500).json({ error: "Server error during login" });
   }
 });
@@ -1155,10 +1165,9 @@ app.post("/api/updateReportStatus", async (req, res) => {
 });
 
 
-app.get("/protected", authenticateUser, (req, res) => {
-  res.json({ message: "Authorized" });
+app.get('/', (req, res) => {
+  res.send('Server is working');
 });
-
 
 // Start the server
 server.listen(port, () => {
