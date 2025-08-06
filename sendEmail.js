@@ -101,6 +101,6 @@ const sendMiddlemanEmail = async (toEmail, role, category, price, currency, acti
 
 module.exports = {
   sendSignupEmail,
-  sendResetPasswordEmail,
   sendMiddlemanEmail,
+  sendResetPasswordEmail, // Ensure this is exported only once
 };
