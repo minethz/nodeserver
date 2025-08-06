@@ -535,8 +535,8 @@ app.post("/api/updateReportStatus", async (req, res) => {
   }
 });
 
-app.get("/get", (req, res) => {
-  res.send("Server running");
+app.get("/", (req, res) => {
+  res.send("Welcome to the server!");
 });
 
 
