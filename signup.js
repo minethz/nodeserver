@@ -599,22 +599,14 @@ router.post("/api/markPaymentAsPaid", async (req, res) => {
   const { requestId } = req.body;
 
   if (!requestId) {
-    console.error("Request ID is missing in /api/markPaymentAsPaid");
     return res.status(400).json({ error: "Request ID is required" });
   }
 
   try {
-    const result = await pool.query(
-      `UPDATE middleman_services SET is_paid = TRUE WHERE id = $1 RETURNING id, is_paid`,
+    await pool.query(
+      `UPDATE middleman_services SET is_paid = TRUE WHERE id = $1`,
       [requestId]
     );
-
-    if (result.rowCount === 0) {
-      console.error(`No record found for requestId: ${requestId}`);
-      return res.status(404).json({ error: "Request not found" });
-    }
-
-    console.log(`Payment marked as paid for requestId: ${requestId}`);
     res.status(200).json({ success: true, message: "Payment marked as paid successfully." });
   } catch (error) {
     console.error("Error marking payment as paid:", error.message);
@@ -1080,15 +1072,3 @@ router.get("/api/getVerificationStatus", async (req, res) => {
 
 // Move all routes from signup.js to server.js and export the router
 module.exports = router;
-
-// Update CORS configuration
-const allowedOrigins = ["https://nodeserver-production-982a.up.railway.app", "http://localhost:3000", "http://localhost:5173"];
-app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
-}));
