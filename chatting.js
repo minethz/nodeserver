@@ -22,7 +22,7 @@ app.use(cors({
 app.use(express.json());
 
 // Update CORS configuration
-const allowedOrigins = ["http://localhost:3000", "http://localhost:5173"];
+const allowedOrigins = ["https://legitprove.com", "https://orangered-stork-519715.hostingersite.com"];
 app.use(cors({
   origin: (origin, callback) => {
     if (!origin || allowedOrigins.includes(origin)) {
