@@ -13,7 +13,10 @@ const axios = require("axios");
 
 const app = express();
 
-app.use(cors());
+app.use(cors({
+  origin: 'https://legitprove.com'
+}));
+
 app.use(express.json());
 
 

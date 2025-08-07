@@ -14,7 +14,11 @@ const server = http.createServer(app);
 const io = new Server(server);
 const upload = multer({ storage: multer.memoryStorage() });
 
-app.use(cors());
+app.use(cors({
+  origin: 'https://legitprove.com'
+}));
+
+
 app.use(express.json());
 
 // Update CORS configuration

@@ -15,7 +15,10 @@ const app = express();
 const port = 5001;
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: 'https://legitprove.com'
+}));
+
 app.use(express.json());
 
 // PostgreSQL connection
