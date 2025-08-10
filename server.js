@@ -10,7 +10,6 @@ const AWS = require("aws-sdk");
 const paymentsRoutes = require("./payments"); // Import payments.js
 const profileRoutes = require("./profile"); // Import profile routes
 const { exec } = require("child_process");
-const fetch = require("node-fetch"); // Import node-fetch for making API requests
 
 const app = express();
 const port = 5001;
@@ -439,19 +438,7 @@ app.get("/", (req, res) => {
   res.send("Welcome to the server!");
 });
 
-// Proxy route for NewsAPI
-app.get("/news", async (req, res) => {
-  try {
-    const response = await fetch(
-      `https://newsapi.org/v2/everything?q=scams&apiKey=${process.env.NEWS_API_KEY}`
-    );
-    const data = await response.json();
-    res.json(data);
-  } catch (error) {
-    console.error("Error fetching news:", error);
-    res.status(500).json({ error: "Failed to fetch news" });
-  }
-});
+
 
 app.listen(port, () => {
   console.log(`✅ Server running at http://localhost:${port}`);
