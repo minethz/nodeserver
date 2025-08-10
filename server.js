@@ -10,6 +10,7 @@ const AWS = require("aws-sdk");
 const paymentsRoutes = require("./payments"); // Import payments.js
 const profileRoutes = require("./profile"); // Import profile routes
 const { exec } = require("child_process");
+const fetch = require("node-fetch"); // Import node-fetch to make API requests
 
 const app = express();
 const port = 5001;
@@ -426,6 +427,30 @@ app.get("/reports/top-liked", async (req, res) => {
   } catch (error) {
     console.error("Error fetching top liked reports:", error);
     res.status(500).json({ error: "Server error while fetching top liked reports" });
+  }
+});
+
+// Route to fetch scam-related news
+app.get("/news", async (req, res) => {
+  try {
+    const response = await fetch(
+      `https://newsapi.org/v2/everything?q=scams&apiKey=${process.env.NEWS_API_KEY}`
+    );
+    const data = await response.json();
+
+    if (data.articles) {
+      const formattedNews = data.articles.map((article) => ({
+        title: article.title,
+        image: article.urlToImage || "/placeholder.jpg",
+        description: article.description || "No description available.",
+      }));
+      res.status(200).json(formattedNews);
+    } else {
+      res.status(500).json({ error: "Failed to fetch news articles." });
+    }
+  } catch (error) {
+    console.error("Error fetching news:", error);
+    res.status(500).json({ error: "Server error while fetching news." });
   }
 });
 
